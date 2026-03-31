@@ -1,98 +1,53 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import LottieView from 'lottie-react-native';
-import React, { useEffect, useRef } from 'react';
-import { Animated, StatusBar, View } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import GlassCard from '../components/ui/GlassCard';
 
-export default function Index() {
+export default function Home() {
   const router = useRouter();
-
-  const moveAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    
-    Animated.timing(moveAnim, {
-      toValue: -40,
-      duration: 1500,
-      useNativeDriver: true,
-    }).start();
-
-    
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 2000,
-      delay: 1000,
-      useNativeDriver: true,
-    }).start();
-
-    
-    const timer = setTimeout(() => {
-      router.replace("/onboarding1" as never);
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const { theme, accent } = useTheme();
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: '#000',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
-      <StatusBar barStyle="light-content" />
+    <View style={styles.container}>
+      <Text style={[styles.header, { color: theme.text }]}>Dashboard</Text>
+      <Text style={[styles.subHeader, { color: theme.subText }]}>
+        Welcome to your dynamic themed app.
+      </Text>
 
-      
-      <Animated.View
-        style={{
-          transform: [{ translateY: moveAnim }],
-          alignItems: 'center',
-        }}
-      >
+      <GlassCard style={styles.cardSpacing}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Quick Links</Text>
+        <Text style={{ color: theme.subText, marginBottom: 15 }}>
+          Your theme changes will reflect instantly across all these components.
+        </Text>
         
-        <LottieView
-          source={require('../assets/animations/scan-ring.json')}
-          autoPlay
-          loop
-          style={{
-            position: 'absolute',
-            width: 260,
-            height: 300,
-            opacity: 1.0, // reduced intensity
-          }}
-        />
-
-      
-        <LottieView
-          source={require('../assets/animations/face-scan.json')}
-          autoPlay
-          loop={false}
-          style={{
-            width: 200,
-            height: 200,
-            opacity: 1.0,
-          }}
-        />
-      </Animated.View>
-
-      <Animated.Text
-        style={{
-          opacity: fadeAnim,
-          color: "#9966CC", 
-          fontSize: 25, 
-          marginTop: 70, 
-          fontWeight: '600',
-          fontFamily:"Poppins-bold",
-          letterSpacing: 1.5,
-          textShadowColor: '#9966CC',
-          textShadowOffset: { width: 0, height: 0 },
-          textShadowRadius: 12,
-        }}
-      >
-        Smart Vision AR
-      </Animated.Text>
+        <TouchableOpacity 
+          style={[styles.button, { backgroundColor: theme.tint, borderColor: accent }]}
+          onPress={() => router.push('/settings')}
+        >
+          <Text style={[styles.buttonText, { color: accent }]}>Go to Settings</Text>
+        </TouchableOpacity>
+      </GlassCard>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 60,
+  },
+  header: { fontSize: 32, fontWeight: 'bold', marginBottom: 5 },
+  subHeader: { fontSize: 16, marginBottom: 30 },
+  cardSpacing: { marginTop: 20 },
+  cardTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10 },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  buttonText: { fontWeight: 'bold', fontSize: 16 },
+});
