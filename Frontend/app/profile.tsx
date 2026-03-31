@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, Pressable, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext'; // Dynamic Theme Hook
@@ -89,7 +89,7 @@ export default function Profile() {
               <Text style={[styles.actionValue, { color: accent }]}>12</Text>
             </View>
             <View style={[styles.actionCard, { backgroundColor: theme.card }]}>
-              <Ionicons name="history" size={24} color={accent} style={{ marginBottom: 10 }} />
+              <Ionicons name="time-outline" size={24} color={accent} style={{ marginBottom: 10 }} />
               <Text style={[styles.actionLabel, { color: theme.text }]}>Try-On History</Text>
               <Text style={[styles.actionValue, { color: accent }]}>45</Text>
             </View>

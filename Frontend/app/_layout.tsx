@@ -3,34 +3,39 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-// 1. Import our custom Theme Provider
-import { ThemeProvider as CustomThemeProvider, useTheme } from '../context/ThemeContext'; 
+import { AuthProvider } from '../context/auth-context';
+import { ThemeProvider as CustomThemeProvider, useTheme } from '../context/ThemeContext';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
-// 2. We move your exact Stack into a sub-component so it can read our new dynamic theme
 function RootLayoutNav() {
-  const { isDark } = useTheme(); // Read the dynamic dark mode from Settings!
+  const { isDark } = useTheme();
 
   return (
     <NavThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {/* YOUR PREVIOUS CODE IS 100% SAFE HERE */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding1" />
+        <Stack.Screen name="onboarding2" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="product" />
+        <Stack.Screen name="tryon" />
+        <Stack.Screen name="placement" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
       </Stack>
-      <StatusBar style={isDark ? "light" : "dark"} />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
 }
 
-// 3. Wrap everything in our CustomThemeProvider
 export default function RootLayout() {
   return (
     <CustomThemeProvider>
-      <RootLayoutNav />
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
     </CustomThemeProvider>
   );
 }

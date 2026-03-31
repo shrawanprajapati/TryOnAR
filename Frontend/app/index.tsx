@@ -31,7 +31,7 @@ export default function Index() {
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [fadeAnim, moveAnim, router]);
 
   return (
     <View
