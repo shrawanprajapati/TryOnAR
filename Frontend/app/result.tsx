@@ -32,7 +32,7 @@ export default function ResultScreen() {
         useNativeDriver: true,
       })
     ]).start();
-  }, []);
+  }, [fadeAnim, scaleAnim]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -45,6 +45,7 @@ export default function ResultScreen() {
         Alert.alert('Permission Denied', 'We need permission to save photos.');
       }
     } catch (error) {
+      console.error('Error saving image:', error);
       Alert.alert('Error', 'Could not save the image.');
     } finally {
       setIsSaving(false);

@@ -1,38 +1,41 @@
-import React from 'react';
+import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import { ThemeProvider, useTheme } from '../context/ThemeContext'; // Adjust path if your context folder is elsewhere
-import AnimatedBackground from '../components/AnimatedBackground';
+import { StatusBar } from 'expo-status-bar';
+import 'react-native-reanimated';
 
-// Create an inner component to consume the theme for the Stack headers/backgrounds
-function AppLayout() {
-  const { theme, isDark } = useTheme();
+import { AuthProvider } from '../context/auth-context';
+import { ThemeProvider as CustomThemeProvider, useTheme } from '../context/ThemeContext';
+
+function RootLayoutNav() {
+  const { isDark } = useTheme();
 
   return (
-    <AnimatedBackground>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          // CRITICAL: Makes the screens transparent so the animated background shows through!
-          contentStyle: { backgroundColor: 'transparent' },
-          headerStyle: { backgroundColor: theme.glassBg },
-          headerTintColor: theme.text,
-        }}
-      >
-        <Stack.Screen name="index" options={{ title: 'Home' }} />
-        <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-        <Stack.Screen name="explore" options={{ title: 'Explore' }} />
-        <Stack.Screen name="profile" options={{ title: 'Profile' }} />
-        {/* Add your other screens here as needed */}
+    <NavThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="onboarding1" />
+        <Stack.Screen name="onboarding2" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="signup" />
+        <Stack.Screen name="home" />
+        <Stack.Screen name="product" />
+        <Stack.Screen name="tryon" />
+        <Stack.Screen name="placement" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
       </Stack>
-    </AnimatedBackground>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+    </NavThemeProvider>
   );
 }
 
-// The Root Layout wraps everything in the Provider
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AppLayout />
-    </ThemeProvider>
+    <CustomThemeProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </CustomThemeProvider>
   );
 }

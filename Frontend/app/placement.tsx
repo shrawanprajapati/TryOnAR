@@ -27,7 +27,7 @@ export default function PlacementScreen() {
         Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
       ])
     ).start();
-  }, []);
+  }, [pulseAnim]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>

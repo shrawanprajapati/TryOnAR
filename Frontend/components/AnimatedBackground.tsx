@@ -24,7 +24,7 @@ export default function AnimatedBackground({ children }: { children: React.React
     createAnimation(orb1, 8000).start();
     createAnimation(orb2, 12000).start();
     createAnimation(orb3, 10000).start();
-  }, []);
+  }, [orb1, orb2, orb3]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
