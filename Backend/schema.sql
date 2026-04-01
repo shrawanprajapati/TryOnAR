@@ -1,0 +1,13 @@
+CREATE DATABASE IF NOT EXISTS tryonar_v2;
+USE tryonar_v2;
+
+CREATE TABLE IF NOT EXISTS products (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  model_slug VARCHAR(120),
+  price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+  category VARCHAR(120),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

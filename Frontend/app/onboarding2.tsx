@@ -1,54 +1,71 @@
-import { useNavigation } from "@react-navigation/native";
-import LottieView from "lottie-react-native";
-import React from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import React from 'react';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
-const { height } = Dimensions.get("window");
+const { height } = Dimensions.get('window');
 
 export default function Onboarding2() {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
+  const { completeOnboarding, isAuthenticated } = useAuth();
+  const { theme, accent } = useTheme();
+
+  const handleContinue = async () => {
+    await completeOnboarding();
+    router.replace(isAuthenticated ? '/home' : '/login');
+  };
 
   return (
     <View style={styles.container}>
+      <PageTransition style={styles.page}>
+        <View style={[styles.badge, { backgroundColor: theme.glassBg, borderColor: theme.glassBorder }]}>
+          <Text style={[styles.badgeText, { color: accent }]}>2 / 2</Text>
+        </View>
 
-    
-      <View style={styles.animationWrapper}>
+        <View style={styles.animationWrapper}>
+          <LottieView
+            source={require('../assets/animations/onboarding2_eye.json')}
+            autoPlay
+            loop
+            style={styles.eye}
+          />
 
-        
-        <LottieView
-          source={require("../assets/animations/onboarding2_eye.json")}
-          autoPlay
-          loop
-          style={styles.eye}
-        />
+          <LottieView
+            source={require('../assets/animations/hud_circle.json')}
+            autoPlay
+            loop
+            speed={0.6}
+            style={styles.hud}
+          />
+        </View>
 
-        
-        <LottieView
-          source={require("../assets/animations/hud_circle.json")}
-          autoPlay
-          loop
-          speed={0.6}
-          style={styles.hud}
-        />
+        <View style={styles.textContainer}>
+          <Text style={[styles.title, { color: theme.text }]}>Try On With Sync</Text>
+          <Text style={[styles.text, { color: theme.subText }]}> 
+            Login once and keep your profile, saved snapshots, and try-on results connected across the app.
+          </Text>
+        </View>
 
-      </View>
+        <View style={styles.footerRow}>
+          <TouchableOpacity
+            style={[styles.secondaryButton, { borderColor: theme.glassBorder, backgroundColor: theme.glassBg }]}
+            onPress={() => router.back()}
+          >
+            <Text style={[styles.secondaryText, { color: theme.text }]}>Back</Text>
+          </TouchableOpacity>
 
-      
-      <View style={styles.textContainer}>
-        <Text style={styles.text}>
-          See it before you wear it. 👓
-        </Text>
-      </View>
-
-      
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={() => navigation.navigate("login")}
-      >
-        <Text style={styles.nextText}>Next</Text>
-      </TouchableOpacity>
-
+          <TouchableOpacity
+            style={[styles.nextButton, { backgroundColor: accent }]}
+            onPress={() => void handleContinue()}
+          >
+            <Text style={styles.nextText}>Get Started</Text>
+          </TouchableOpacity>
+        </View>
+      </PageTransition>
     </View>
   );
 }
@@ -56,71 +73,83 @@ export default function Onboarding2() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0A0A",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
   },
-
-  glow: {
-    position: "absolute",
-    width: 350,
-    height: 350,
-    borderRadius: 200,
-    alignSelf: "center",
-    opacity: 0.25,
+  page: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingTop: 72,
+    paddingBottom: 42,
+    paddingHorizontal: 24,
   },
-
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
   animationWrapper: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: height * 0.36,
   },
-
   eye: {
-    width: 220,
-    height: 220,
-    opacity: 0.7,
+    width: 230,
+    height: 230,
+    opacity: 0.78,
   },
-
   hud: {
-    position: "absolute",
+    position: 'absolute',
     width: 300,
     height: 300,
     opacity: 0.9,
   },
-
   textContainer: {
-    position: "absolute",
-    bottom: height * 0.18,
-    paddingHorizontal: 30,
+    marginTop: 8,
   },
-
+  title: {
+    fontSize: 34,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
   text: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    textAlign: "center",
-    fontFamily: "Poppins-bold",
-    fontWeight: "500",
-
-    
-    textShadowColor:  '#9966CC',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 26,
+    paddingHorizontal: 10,
   },
-
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  secondaryText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   nextButton: {
-    position: "absolute",
-    bottom: 40,
-    right: 25,
-    backgroundColor: "#0A0A0A",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 30,
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
-
   nextText: {
-     
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

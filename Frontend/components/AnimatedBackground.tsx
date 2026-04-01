@@ -21,13 +21,24 @@ export default function AnimatedBackground({ children }: { children: React.React
       );
     };
 
-    createAnimation(orb1, 8000).start();
-    createAnimation(orb2, 12000).start();
-    createAnimation(orb3, 10000).start();
-  }, []);
+    const first = createAnimation(orb1, 8000);
+    const second = createAnimation(orb2, 12000);
+    const third = createAnimation(orb3, 10000);
+
+    first.start();
+    second.start();
+    third.start();
+
+    return () => {
+      first.stop();
+      second.stop();
+      third.stop();
+    };
+  }, [orb1, orb2, orb3]);
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={styles.container}>
+      <View style={[styles.baseLayer, { backgroundColor: theme.background }]} />
       {/* Orb 1: Accent Color */}
       <Animated.View style={[
         styles.orb, { backgroundColor: accent, top: -height * 0.1, left: -width * 0.2 },
@@ -67,7 +78,7 @@ export default function AnimatedBackground({ children }: { children: React.React
         }
       ]} />
 
-      <View style={StyleSheet.absoluteFill}>
+      <View style={styles.content}>
         {children}
       </View>
     </View>
@@ -75,6 +86,8 @@ export default function AnimatedBackground({ children }: { children: React.React
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, overflow: 'hidden' },
-  orb: { position: 'absolute', width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, filter: 'blur(70px)' },
+  container: { flex: 1, width: '100%', minHeight: '100%', overflow: 'hidden' },
+  baseLayer: { ...StyleSheet.absoluteFillObject },
+  content: { ...StyleSheet.absoluteFillObject },
+  orb: { position: 'absolute', width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45 },
 });

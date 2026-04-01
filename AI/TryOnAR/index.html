@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TryOnAR Live Viewer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #04070c;
+        --panel: rgba(11, 18, 27, 0.82);
+        --line: rgba(255, 255, 255, 0.1);
+        --line-strong: rgba(255, 255, 255, 0.18);
+        --text: #f7fafc;
+        --muted: #9dafc3;
+        --accent: #39c4ff;
+        --accent-warm: #ff5d8f;
+        --good: #28d6a3;
+        --shadow: 0 26px 90px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(57, 196, 255, 0.18), transparent 28%),
+          radial-gradient(circle at bottom right, rgba(255, 93, 143, 0.16), transparent 30%),
+          linear-gradient(160deg, #03050a 0%, #08111d 52%, #03050b 100%);
+      }
+
+      .app {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+        gap: 22px;
+        padding: 24px;
+      }
+
+      .stage-shell,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--panel);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--shadow);
+      }
+
+      .stage-shell {
+        position: relative;
+        overflow: hidden;
+        min-height: 84vh;
+      }
+
+      .stage-top {
+        position: absolute;
+        inset: 0 0 auto 0;
+        z-index: 5;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.48), transparent);
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.36);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-weight: 700;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--good);
+        box-shadow: 0 0 16px rgba(40, 214, 163, 0.9);
+      }
+
+      .stage-title {
+        text-align: right;
+      }
+
+      .stage-title strong {
+        display: block;
+        font-size: clamp(22px, 3vw, 34px);
+        line-height: 1.05;
+      }
+
+      .stage-title span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .camera-wrap {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background:
+          radial-gradient(circle at center, rgba(57, 196, 255, 0.08), transparent 44%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+      }
+
+      video,
+      .fallback {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: linear-gradient(180deg, rgba(2, 6, 12, 0.85), rgba(4, 9, 16, 0.95));
+      }
+
+      .fallback {
+        display: none;
+        padding: 36px;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .fallback-card {
+        max-width: 440px;
+        border: 1px solid var(--line-strong);
+        border-radius: 24px;
+        padding: 24px;
+        background: rgba(0, 0, 0, 0.32);
+      }
+
+      .fallback-card h2 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      .fallback-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .tryon-guide,
+      .placement-guide {
+        position: absolute;
+        inset: 50% auto auto 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .tryon-guide {
+        width: min(46vw, 360px);
+        height: min(62vh, 460px);
+        border-radius: 46% 46% 42% 42% / 40% 40% 54% 54%;
+        border: 2px solid rgba(255, 255, 255, 0.48);
+        box-shadow:
+          0 0 0 18px rgba(57, 196, 255, 0.08),
+          0 0 40px rgba(57, 196, 255, 0.16);
+      }
+
+      .tryon-guide::before,
+      .tryon-guide::after {
+        content: "";
+        position: absolute;
+        inset: 12% 12%;
+        border-radius: inherit;
+        border: 1px dashed rgba(255, 255, 255, 0.28);
+      }
+
+      .tryon-guide::after {
+        inset: 22% 18%;
+        border-style: solid;
+        opacity: 0.35;
+      }
+
+      .placement-guide {
+        width: min(62vw, 560px);
+        height: min(42vh, 320px);
+        perspective: 800px;
+      }
+
+      .placement-grid {
+        position: absolute;
+        inset: 0;
+        border-radius: 26px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: 36px 36px;
+        transform: rotateX(70deg);
+        transform-origin: center center;
+        box-shadow: 0 0 48px rgba(57, 196, 255, 0.12);
+      }
+
+      .placement-anchor {
+        position: absolute;
+        left: 50%;
+        top: 58%;
+        width: 132px;
+        height: 132px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.48);
+        box-shadow: 0 0 0 18px rgba(57, 196, 255, 0.08);
+      }
+
+      .placement-anchor::before,
+      .placement-anchor::after {
+        content: "";
+        position: absolute;
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .placement-anchor::before {
+        inset: 50% 18% auto 18%;
+        height: 1px;
+      }
+
+      .placement-anchor::after {
+        inset: 18% auto 18% 50%;
+        width: 1px;
+      }
+
+      .scan-line {
+        position: absolute;
+        inset: 20% 10% auto 10%;
+        height: 3px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        box-shadow: 0 0 20px rgba(57, 196, 255, 0.85);
+        animation: glide 2.6s linear infinite;
+      }
+
+      .footer-bar {
+        position: absolute;
+        inset: auto 18px 18px 18px;
+        z-index: 5;
+        display: flex;
+        gap: 12px;
+        padding: 14px;
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(0, 0, 0, 0.38);
+        backdrop-filter: blur(16px);
+      }
+
+      button {
+        border: 0;
+        border-radius: 16px;
+        padding: 14px 18px;
+        font: inherit;
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+        transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, var(--accent), #179bff);
+        color: #03111b;
+        font-weight: 800;
+      }
+
+      button.secondary {
+        border: 1px solid var(--line-strong);
+      }
+
+      .panel {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .panel h1 {
+        margin: 0;
+        font-size: 36px;
+        line-height: 1;
+      }
+
+      .panel p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .metric-card {
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .metric-label {
+        display: block;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .metric-value {
+        font-size: 24px;
+        font-weight: 800;
+      }
+
+      .metric-sub {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        font-size: 13px;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .status strong {
+        font-size: 16px;
+      }
+
+      .status small {
+        color: var(--muted);
+      }
+
+      .meter {
+        margin-top: 14px;
+        width: 100%;
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .meter-fill {
+        width: 0%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent-warm), var(--accent));
+        transition: width 0.45s ease;
+      }
+
+      @keyframes glide {
+        0% {
+          transform: translateY(-120px);
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        85% {
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(240px);
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .stage-shell {
+          min-height: 66vh;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .app {
+          padding: 14px;
+        }
+
+        .stage-top,
+        .panel {
+          padding: 16px;
+        }
+
+        .footer-bar {
+          flex-wrap: wrap;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .stage-title {
+          max-width: 48%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="stage-shell">
+        <div class="stage-top">
+          <div class="eyebrow" id="liveLabel">Live guidance</div>
+          <div class="stage-title">
+            <strong id="title">Live Viewer</strong>
+            <span id="subtitle">Preparing camera...</span>
+          </div>
+        </div>
+
+        <div class="camera-wrap">
+          <video id="camera" autoplay muted playsinline></video>
+          <div class="fallback" id="fallback">
+            <div class="fallback-card">
+              <h2>Camera preview unavailable</h2>
+              <p id="fallbackText">
+                Camera permissions are blocked or unsupported here. Open the same viewer in a browser with camera access to use the live experience.
+              </p>
+            </div>
+          </div>
+
+          <div class="overlay">
+            <div class="tryon-guide" id="tryonGuide"></div>
+            <div class="placement-guide" id="placementGuide">
+              <div class="placement-grid"></div>
+              <div class="placement-anchor"></div>
+            </div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+
+        <div class="footer-bar">
+          <button class="primary" id="toggleCamera">Start Camera</button>
+          <button class="secondary" id="flipCamera">Flip Camera</button>
+          <button class="secondary" id="lockFrame">Lock Frame</button>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div>
+          <div class="eyebrow" id="modeLabel">Try-On mode</div>
+          <h1 id="panelTitle">Live Viewer</h1>
+          <p id="panelCopy">
+            Live camera guidance is active. Use the overlay and status cards to align the product in view.
+          </p>
+        </div>
+
+        <article class="metric-card">
+          <span class="metric-label">Target</span>
+          <div class="metric-value" id="targetValue">Connected Preview</div>
+          <div class="metric-sub" id="tipText">Hold still while the guidance overlay locks in.</div>
+        </article>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <span class="metric-label">Alignment</span>
+            <div class="metric-value" id="alignmentValue">0%</div>
+            <div class="meter"><div class="meter-fill" id="alignmentMeter"></div></div>
+          </article>
+
+          <article class="metric-card">
+            <span class="metric-label">Camera</span>
+            <div class="metric-value" id="cameraValue">Idle</div>
+            <div class="metric-sub" id="cameraSub">Waiting to start live view.</div>
+          </article>
+        </div>
+
+        <article class="metric-card">
+          <div class="status">
+            <div>
+              <small>Guidance</small>
+              <strong id="guidanceTitle">Move into position</strong>
+            </div>
+            <div>
+              <small>Status</small>
+              <strong id="guidanceState">Standby</strong>
+            </div>
+          </div>
+          <div class="metric-sub" id="guidanceCopy">
+            Start the camera to receive live framing guidance for this mode.
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <span class="metric-label">Session Tags</span>
+          <div class="chips" id="chips"></div>
+        </article>
+      </aside>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const mode = (params.get('mode') || 'tryon').toLowerCase();
+      const category = params.get('category') || params.get('target') || 'Connected Preview';
+      const product = params.get('product') || params.get('model') || 'Live Viewer';
+
+      const ui = {
+        title: document.getElementById('title'),
+        subtitle: document.getElementById('subtitle'),
+        panelTitle: document.getElementById('panelTitle'),
+        panelCopy: document.getElementById('panelCopy'),
+        modeLabel: document.getElementById('modeLabel'),
+        liveLabel: document.getElementById('liveLabel'),
+        targetValue: document.getElementById('targetValue'),
+        tipText: document.getElementById('tipText'),
+        alignmentValue: document.getElementById('alignmentValue'),
+        alignmentMeter: document.getElementById('alignmentMeter'),
+        cameraValue: document.getElementById('cameraValue'),
+        cameraSub: document.getElementById('cameraSub'),
+        guidanceTitle: document.getElementById('guidanceTitle'),
+        guidanceState: document.getElementById('guidanceState'),
+        guidanceCopy: document.getElementById('guidanceCopy'),
+        toggleCamera: document.getElementById('toggleCamera'),
+        flipCamera: document.getElementById('flipCamera'),
+        lockFrame: document.getElementById('lockFrame'),
+        fallback: document.getElementById('fallback'),
+        fallbackText: document.getElementById('fallbackText'),
+        tryonGuide: document.getElementById('tryonGuide'),
+        placementGuide: document.getElementById('placementGuide'),
+        chips: document.getElementById('chips'),
+        video: document.getElementById('camera'),
+      };
+
+      const isPlacement = mode.includes('placement') || mode.includes('detect');
+      const sessionTips = isPlacement
+        ? {
+            subtitle: 'Aim at the floor or tabletop and move slowly until the anchor steadies.',
+            panel: 'Live placement mode uses the camera feed and anchor overlay to help you position decor or room objects in space.',
+            tip: 'Keep a flat surface in view and align the anchor with the intended placement point.',
+            title: 'Surface scan in progress',
+            guidance: 'Scan the room slowly to help the anchor stabilize.',
+          }
+        : {
+            subtitle: 'Center your face or body inside the guide and keep lighting even.',
+            panel: 'Live try-on mode helps you frame eyewear, apparel, and accessories before opening the full preview flow.',
+            tip: 'Keep the subject centered inside the oval guide and avoid harsh backlight.',
+            title: 'Fit alignment in progress',
+            guidance: 'Stay inside the guide so the overlay remains stable.',
+          };
+
+      ui.title.textContent = product;
+      ui.subtitle.textContent = sessionTips.subtitle;
+      ui.panelTitle.textContent = product;
+      ui.panelCopy.textContent = sessionTips.panel;
+      ui.modeLabel.textContent = isPlacement ? 'Placement mode' : 'Try-On mode';
+      ui.liveLabel.textContent = isPlacement ? 'Live placement' : 'Live try-on';
+      ui.targetValue.textContent = category;
+      ui.tipText.textContent = sessionTips.tip;
+      ui.tryonGuide.style.display = isPlacement ? 'none' : 'block';
+      ui.placementGuide.style.display = isPlacement ? 'block' : 'none';
+
+      [mode, category, product].filter(Boolean).forEach((value) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        chip.textContent = value;
+        ui.chips.appendChild(chip);
+      });
+
+      let stream = null;
+      let facingMode = isPlacement ? 'environment' : 'user';
+      let tick = 0;
+      let isLocked = false;
+      let intervalId = null;
+
+      function stopStream() {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          stream = null;
+        }
+
+        ui.video.srcObject = null;
+      }
+
+      function setCameraUi(active) {
+        ui.cameraValue.textContent = active ? 'Live' : 'Idle';
+        ui.cameraSub.textContent = active
+          ? `Using ${facingMode === 'user' ? 'front' : 'rear'} camera for ${isPlacement ? 'placement' : 'try-on'} guidance.`
+          : 'Waiting to start live view.';
+        ui.toggleCamera.textContent = active ? 'Stop Camera' : 'Start Camera';
+      }
+
+      function updateGuidance() {
+        tick += 1;
+        const base = isPlacement ? 74 : 78;
+        const swing = Math.sin(tick / 3) * 8 + Math.cos(tick / 5) * 5;
+        const score = Math.max(58, Math.min(98, Math.round(base + swing + (isLocked ? 6 : 0))));
+
+        ui.alignmentValue.textContent = `${score}%`;
+        ui.alignmentMeter.style.width = `${score}%`;
+        ui.guidanceTitle.textContent = score > 88 ? 'Alignment strong' : sessionTips.title;
+        ui.guidanceState.textContent = isLocked ? 'Locked' : score > 84 ? 'Tracking' : 'Adjusting';
+        ui.guidanceCopy.textContent = isLocked
+          ? 'Frame locked. You can continue with the current placement or fit view.'
+          : score > 84
+            ? 'Good framing. Hold steady for a more stable preview.'
+            : sessionTips.guidance;
+      }
+
+      async function startCamera() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          ui.fallback.style.display = 'flex';
+          ui.fallbackText.textContent = 'This browser does not support live camera access for the viewer.';
+          setCameraUi(false);
+          return;
+        }
+
+        try {
+          stopStream();
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode,
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          });
+          ui.video.srcObject = stream;
+          ui.fallback.style.display = 'none';
+          setCameraUi(true);
+
+          if (!intervalId) {
+            intervalId = window.setInterval(updateGuidance, 900);
+          }
+
+          updateGuidance();
+        } catch (error) {
+          ui.fallback.style.display = 'flex';
+          ui.fallbackText.textContent = 'Camera permission was denied. Allow camera access and reload this viewer.';
+          setCameraUi(false);
+        }
+      }
+
+      function stopCamera() {
+        stopStream();
+        setCameraUi(false);
+        if (intervalId) {
+          window.clearInterval(intervalId);
+          intervalId = null;
+        }
+        ui.guidanceTitle.textContent = 'Move into position';
+        ui.guidanceState.textContent = 'Standby';
+        ui.guidanceCopy.textContent = 'Start the camera to receive live framing guidance for this mode.';
+        ui.alignmentValue.textContent = '0%';
+        ui.alignmentMeter.style.width = '0%';
+      }
+
+      ui.toggleCamera.addEventListener('click', async () => {
+        if (stream) {
+          stopCamera();
+          return;
+        }
+
+        await startCamera();
+      });
+
+      ui.flipCamera.addEventListener('click', async () => {
+        facingMode = facingMode === 'user' ? 'environment' : 'user';
+        if (stream) {
+          await startCamera();
+        }
+      });
+
+      ui.lockFrame.addEventListener('click', () => {
+        isLocked = !isLocked;
+        ui.lockFrame.textContent = isLocked ? 'Unlock Frame' : 'Lock Frame';
+        ui.guidanceState.textContent = isLocked ? 'Locked' : 'Tracking';
+        updateGuidance();
+      });
+
+      setCameraUi(false);
+      updateGuidance();
+      void startCamera();
+    </script>
+  </body>
+</html>

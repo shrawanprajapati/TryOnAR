@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SystemUI from 'expo-system-ui';
+import { Platform } from 'react-native';
 
 export const hexToRgba = (hex: string, alpha: number) => {
   let r = 0, g = 0, b = 0;
@@ -46,26 +48,68 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const toggleTheme = async () => {
-    const newTheme = !isDark;
-    setIsDark(newTheme);
-    await AsyncStorage.setItem('appTheme', newTheme ? 'dark' : 'light');
+    const nextIsDark = !isDark;
+    setIsDark(nextIsDark);
+
+    try {
+      await AsyncStorage.setItem('appTheme', nextIsDark ? 'dark' : 'light');
+    } catch (error) {
+      console.log('Error saving theme:', error);
+    }
   };
 
   const handleSetAccent = async (color: string) => {
     setAccent(color);
-    await AsyncStorage.setItem('appAccent', color);
+
+    try {
+      await AsyncStorage.setItem('appAccent', color);
+    } catch (error) {
+      console.log('Error saving accent:', error);
+    }
   };
 
   const theme = {
-    background: isDark ? '#0A0A0A' : '#F4F6F9',
-    text: isDark ? '#FFFFFF' : '#121212',
-    subText: isDark ? '#A0A0A0' : '#6C757D',
-    card: isDark ? '#161616' : '#FFFFFF',
+    background: isDark ? '#06080D' : '#F4F6F9',
+    text: isDark ? '#F8FAFC' : '#121212',
+    subText: isDark ? '#9AA4B2' : '#6C757D',
+    card: isDark ? '#11151C' : '#FFFFFF',
     primary: accent,
     tint: hexToRgba(accent, isDark ? 0.2 : 0.1),
-    glassBg: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-    glassBorder: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
+    glassBg: isDark ? 'rgba(17, 21, 28, 0.78)' : 'rgba(255, 255, 255, 0.84)',
+    glassBorder: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
   };
+
+  useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const roots = ['root', '__next', 'expo-root']
+        .map((id) => document.getElementById(id))
+        .filter((element): element is HTMLElement => Boolean(element));
+
+      document.documentElement.style.backgroundColor = theme.background;
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+      document.documentElement.style.height = '100%';
+
+      document.body.style.backgroundColor = theme.background;
+      document.body.style.color = theme.text;
+      document.body.style.margin = '0';
+      document.body.style.minHeight = '100vh';
+
+      roots.forEach((root) => {
+        root.style.backgroundColor = theme.background;
+        root.style.minHeight = '100vh';
+      });
+
+      return;
+    }
+
+    void SystemUI.setBackgroundColorAsync(theme.background).catch(() => {
+      // Some platforms don't allow runtime background updates, so we fail softly.
+    });
+  }, [isDark, isLoaded, theme.background, theme.text]);
 
   if (!isLoaded) return null; // Prevent flash of wrong theme
 

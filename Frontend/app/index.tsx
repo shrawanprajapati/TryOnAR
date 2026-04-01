@@ -1,33 +1,82 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
-import GlassCard from '../components/ui/GlassCard';
+import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-export default function Home() {
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+
+export default function Index() {
   const router = useRouter();
-  const { theme, accent } = useTheme();
+  const { theme, accent, isDark } = useTheme();
+  const { isAuthenticated, isReady, onboardingComplete } = useAuth();
+
+  const moveAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    // Slide animation for the Lottie icons
+    Animated.timing(moveAnim, {
+      toValue: -40,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start();
+
+    // Fade-in animation for the text
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 2000,
+      delay: 1000,
+      useNativeDriver: true,
+    }).start();
+
+    if (!isReady) {
+      return () => undefined;
+    }
+
+    const timer = setTimeout(() => {
+      if (!onboardingComplete) {
+        router.replace('/onboarding1');
+        return;
+      }
+
+      router.replace(isAuthenticated ? '/home' : '/login');
+    }, 2600);
+
+    return () => clearTimeout(timer);
+  }, [fadeAnim, isAuthenticated, isReady, moveAnim, onboardingComplete, router]);
 
   return (
-    <View style={styles.container}>
-      <Text style={[styles.header, { color: theme.text }]}>Dashboard</Text>
-      <Text style={[styles.subHeader, { color: theme.subText }]}>
-        Welcome to your dynamic themed app.
-      </Text>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      <GlassCard style={styles.cardSpacing}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Quick Links</Text>
-        <Text style={{ color: theme.subText, marginBottom: 15 }}>
-          Your theme changes will reflect instantly across all these components.
-        </Text>
-        
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: theme.tint, borderColor: accent }]}
-          onPress={() => router.push('/settings')}
+      <PageTransition style={styles.page}>
+        <Animated.View style={[styles.animationContainer, { transform: [{ translateY: moveAnim }] }]}>
+          <LottieView
+            source={require('../assets/animations/scan-ring.json')}
+            autoPlay
+            loop
+            style={styles.scanRing}
+          />
+
+          <LottieView
+            source={require('../assets/animations/face-scan.json')}
+            autoPlay
+            loop={false}
+            style={styles.faceScan}
+          />
+        </Animated.View>
+
+        <Animated.Text
+          style={[styles.title, { opacity: fadeAnim, color: accent, textShadowColor: accent }]}
         >
-          <Text style={[styles.buttonText, { color: accent }]}>Go to Settings</Text>
-        </TouchableOpacity>
-      </GlassCard>
+          Smart Vision AR
+        </Animated.Text>
+        <Text style={[styles.subtitle, { color: theme.subText }]}>
+          Live try-on, object placement, and synced profile data in one AR workspace.
+        </Text>
+      </PageTransition>
     </View>
   );
 }
@@ -35,19 +84,41 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
-  },
-  header: { fontSize: 32, fontWeight: 'bold', marginBottom: 5 },
-  subHeader: { fontSize: 16, marginBottom: 30 },
-  cardSpacing: { marginTop: 20 },
-  cardTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10 },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: { fontWeight: 'bold', fontSize: 16 },
+  page: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  animationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanRing: {
+    position: 'absolute',
+    width: 260,
+    height: 300,
+    opacity: 1.0,
+  },
+  faceScan: {
+    width: 200,
+    height: 200,
+    opacity: 1.0,
+  },
+  title: {
+    fontSize: 28,
+    marginTop: 70,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+  },
+  subtitle: {
+    marginTop: 16,
+    maxWidth: 280,
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: 14,
+  },
 });

@@ -1,0 +1,63 @@
+{
+  "users": [
+    {
+      "id": "a6206de7-4c7f-45da-9785-259678f66844",
+      "name": "Shrawan",
+      "email": "prajapatishrawan75@gmail.com",
+      "role": "user",
+      "passwordHash": "ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f",
+      "createdAt": "2026-03-31T19:44:37.622Z",
+      "updatedAt": "2026-03-31T19:44:37.622Z",
+      "snapshots": [
+        {
+          "id": "snap-1",
+          "title": "Shrawan Try-On Session",
+          "subtitle": "Eyewear fit preview"
+        },
+        {
+          "id": "snap-2",
+          "title": "Living Room Placement",
+          "subtitle": "Lamp placement scene"
+        },
+        {
+          "id": "snap-3",
+          "title": "Catalog Review",
+          "subtitle": "Product shortlist from the latest browse"
+        }
+      ]
+    },
+    {
+      "id": "84eff4c6-7ff6-431d-955b-c798cf826f79",
+      "name": "Codex Test",
+      "email": "codex_20260401012202@tryonar.app",
+      "role": "Verified Tester",
+      "passwordHash": "bd94dcda26fccb4e68d6a31f9b5aac0b571ae266d822620e901ef7ebe3a11d4f",
+      "createdAt": "2026-03-31T19:52:03.112Z",
+      "updatedAt": "2026-03-31T19:52:03.129Z",
+      "snapshots": [
+        {
+          "id": "snap-1",
+          "title": "Codex Try-On Session",
+          "subtitle": "Eyewear fit preview"
+        },
+        {
+          "id": "snap-2",
+          "title": "Living Room Placement",
+          "subtitle": "Lamp placement scene"
+        },
+        {
+          "id": "snap-3",
+          "title": "Catalog Review",
+          "subtitle": "Product shortlist from the latest browse"
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "token": "1580fe5e-543c-412f-b22e-351901b07ea2",
+      "userId": "84eff4c6-7ff6-431d-955b-c798cf826f79",
+      "createdAt": "2026-03-31T19:52:03.115Z"
+    }
+  ]
+}
