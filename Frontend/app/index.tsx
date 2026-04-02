@@ -1,33 +1,74 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
-import GlassCard from '../components/ui/GlassCard';
+import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Animated, StatusBar, StyleSheet, View } from 'react-native';
 
-export default function Home() {
+import { useAuth } from '@/context/auth-context';
+
+export default function IndexScreen() {
   const router = useRouter();
-  const { theme, accent } = useTheme();
+  const { user, loading } = useAuth();
+  const moveAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(moveAnim, {
+      toValue: -40,
+      duration: 1500,
+      useNativeDriver: true,
+    }).start();
+
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 2000,
+      delay: 600,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim, moveAnim]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      router.replace(user ? '/home' : '/onboarding1');
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [loading, router, user]);
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.header, { color: theme.text }]}>Dashboard</Text>
-      <Text style={[styles.subHeader, { color: theme.subText }]}>
-        Welcome to your dynamic themed app.
-      </Text>
+      <StatusBar barStyle="light-content" />
 
-      <GlassCard style={styles.cardSpacing}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Quick Links</Text>
-        <Text style={{ color: theme.subText, marginBottom: 15 }}>
-          Your theme changes will reflect instantly across all these components.
-        </Text>
-        
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: theme.tint, borderColor: accent }]}
-          onPress={() => router.push('/settings')}
-        >
-          <Text style={[styles.buttonText, { color: accent }]}>Go to Settings</Text>
-        </TouchableOpacity>
-      </GlassCard>
+      <Animated.View
+        style={{
+          transform: [{ translateY: moveAnim }],
+          alignItems: 'center',
+        }}
+      >
+        <LottieView
+          source={require('../assets/animations/scan-ring.json')}
+          autoPlay
+          loop
+          style={styles.ring}
+        />
+
+        <LottieView
+          source={require('../assets/animations/face-scan.json')}
+          autoPlay
+          loop={false}
+          style={styles.face}
+        />
+      </Animated.View>
+
+      <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>TryOnAR</Animated.Text>
+      <Animated.Text style={[styles.subtitle, { opacity: fadeAnim }]}>
+        Smart vision try-on experience
+      </Animated.Text>
+
+      {loading ? <ActivityIndicator style={styles.loader} color="#FFFFFF" /> : null}
     </View>
   );
 }
@@ -35,19 +76,38 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    paddingTop: 60,
-  },
-  header: { fontSize: 32, fontWeight: 'bold', marginBottom: 5 },
-  subHeader: { fontSize: 16, marginBottom: 30 },
-  cardSpacing: { marginTop: 20 },
-  cardTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10 },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: { fontWeight: 'bold', fontSize: 16 },
+  ring: {
+    position: 'absolute',
+    width: 260,
+    height: 300,
+    opacity: 1,
+  },
+  face: {
+    width: 200,
+    height: 200,
+    opacity: 1,
+  },
+  title: {
+    color: '#9966CC',
+    fontSize: 28,
+    marginTop: 70,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textShadowColor: '#9966CC',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+  },
+  subtitle: {
+    color: '#C7C3D7',
+    fontSize: 14,
+    marginTop: 10,
+    letterSpacing: 0.4,
+  },
+  loader: {
+    marginTop: 24,
+  },
 });

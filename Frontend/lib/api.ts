@@ -1,24 +1,33 @@
 import { Platform } from 'react-native';
 
-const defaultBackendUrl = Platform.select({
-  android: 'http://10.0.2.2:4000',
-  default: 'http://localhost:4000',
-});
-
-const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || defaultBackendUrl;
+const backendUrl =
+  Platform.OS === 'android'
+    ? process.env.EXPO_PUBLIC_BACKEND_URL || 'http://10.0.2.2:4000'
+    : process.env.EXPO_PUBLIC_BACKEND_URL_WEB || 'http://localhost:4000';
 const aiViewerUrl = `${backendUrl}/ai-viewer/`;
 
 async function request(path: string, options: RequestInit = {}, token?: string) {
-  const response = await fetch(`${backendUrl}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
+  let response: Response;
 
-  const data = await response.json();
+  try {
+    response = await fetch(`${backendUrl}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    const accessHint =
+      Platform.OS === 'android'
+        ? 'Make sure the Backend server is running and the emulator can access it.'
+        : 'Make sure the Backend server is running and reload the page after it starts.';
+    throw new Error(`Unable to reach the backend at ${backendUrl}. ${accessHint}`);
+  }
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
 
   if (!response.ok) {
     throw new Error(data.message || 'Request failed.');

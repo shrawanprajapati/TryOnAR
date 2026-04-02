@@ -9,6 +9,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 const firebaseConfig = {
@@ -26,7 +27,27 @@ if (missingKey) {
 }
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
+
+function createNativeAuth() {
+  try {
+    const nativeAuth = require('@firebase/auth') as {
+      initializeAuth: (firebaseApp: typeof app, deps?: { persistence?: unknown }) => ReturnType<typeof getAuth>;
+      getReactNativePersistence?: (storage: typeof AsyncStorage) => unknown;
+    };
+
+    if (typeof nativeAuth.getReactNativePersistence === 'function') {
+      return nativeAuth.initializeAuth(app, {
+        persistence: nativeAuth.getReactNativePersistence(AsyncStorage),
+      });
+    }
+  } catch {
+    // Fall back to default auth if the RN bundle helper is unavailable.
+  }
+
+  return getAuth(app);
+}
+
+const auth = Platform.OS === 'web' ? getAuth(app) : createNativeAuth();
 
 if (Platform.OS === 'web') {
   setPersistence(auth, browserLocalPersistence).catch(() => undefined);

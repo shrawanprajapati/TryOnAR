@@ -11,13 +11,41 @@ const uploadRoutes = require('./routes/uploads');
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
+const host = process.env.HOST || '0.0.0.0';
 const frontendUrl = process.env.FRONTEND_URL || '*';
 const uploadsDir = path.resolve(__dirname, '..', 'uploads');
 const aiViewerDir = path.resolve(__dirname, '..', '..', 'AI', 'TryOnAR');
+const allowedOrigins =
+  frontendUrl === '*'
+    ? null
+    : frontendUrl
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+
+function isLocalDevOrigin(origin) {
+  try {
+    const parsed = new URL(origin);
+    const localHosts = new Set(['localhost', '127.0.0.1']);
+    return localHosts.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
 
 app.use(
   cors({
-    origin: frontendUrl === '*' ? true : frontendUrl,
+    origin(origin, callback) {
+      if (!origin || !allowedOrigins) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin) || isLocalDevOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origin ${origin} is not allowed by CORS.`));
+    },
   })
 );
 app.use(express.json());
@@ -51,6 +79,6 @@ app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/uploads', uploadRoutes);
 
-app.listen(port, () => {
-  console.log(`TryOnAR backend listening on http://localhost:${port}`);
+app.listen(port, host, () => {
+  console.log(`TryOnAR backend listening on http://${host}:${port}`);
 });
