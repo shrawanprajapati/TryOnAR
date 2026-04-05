@@ -1,13 +1,17 @@
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef } from 'react';
-import { ActivityIndicator, Animated, StatusBar, StyleSheet, View } from 'react-native';
+import { Animated, StatusBar, StyleSheet, Text, View } from 'react-native';
 
-import { useAuth } from '@/context/auth-context';
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
-export default function IndexScreen() {
+export default function Index() {
   const router = useRouter();
-  const { user, loading } = useAuth();
+  const { theme, accent, isDark } = useTheme();
+  const { isAuthenticated, isReady, onboardingComplete } = useAuth();
+
   const moveAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -21,54 +25,56 @@ export default function IndexScreen() {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 2000,
-      delay: 600,
+      delay: 1000,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim, moveAnim]);
 
-  useEffect(() => {
-    if (loading) {
-      return;
+    if (!isReady) {
+      return () => undefined;
     }
 
     const timer = setTimeout(() => {
-      router.replace(user ? '/home' : '/onboarding1');
-    }, 1800);
+      if (!onboardingComplete) {
+        router.replace('/onboarding1');
+        return;
+      }
+
+      router.replace(isAuthenticated ? '/home' : '/login');
+    }, 2600);
 
     return () => clearTimeout(timer);
-  }, [loading, router, user]);
+  }, [fadeAnim, isAuthenticated, isReady, moveAnim, onboardingComplete, router]);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      <Animated.View
-        style={{
-          transform: [{ translateY: moveAnim }],
-          alignItems: 'center',
-        }}
-      >
-        <LottieView
-          source={require('../assets/animations/scan-ring.json')}
-          autoPlay
-          loop
-          style={styles.ring}
-        />
+      <PageTransition style={styles.page}>
+        <Animated.View style={[styles.animationContainer, { transform: [{ translateY: moveAnim }] }]}>
+          <LottieView
+            source={require('../assets/animations/scan-ring.json')}
+            autoPlay
+            loop
+            style={styles.scanRing}
+          />
 
-        <LottieView
-          source={require('../assets/animations/face-scan.json')}
-          autoPlay
-          loop={false}
-          style={styles.face}
-        />
-      </Animated.View>
+          <LottieView
+            source={require('../assets/animations/face-scan.json')}
+            autoPlay
+            loop={false}
+            style={styles.faceScan}
+          />
+        </Animated.View>
 
-      <Animated.Text style={[styles.title, { opacity: fadeAnim }]}>TryOnAR</Animated.Text>
-      <Animated.Text style={[styles.subtitle, { opacity: fadeAnim }]}>
-        Smart vision try-on experience
-      </Animated.Text>
-
-      {loading ? <ActivityIndicator style={styles.loader} color="#FFFFFF" /> : null}
+        <Animated.Text
+          style={[styles.title, { opacity: fadeAnim, color: accent, textShadowColor: accent }]}
+        >
+          Smart Vision AR
+        </Animated.Text>
+        <Text style={[styles.subtitle, { color: theme.subText }]}>
+          Live try-on, object placement, and synced profile data in one AR workspace.
+        </Text>
+      </PageTransition>
     </View>
   );
 }
@@ -76,38 +82,41 @@ export default function IndexScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  ring: {
+  page: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  animationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanRing: {
     position: 'absolute',
     width: 260,
     height: 300,
     opacity: 1,
   },
-  face: {
+  faceScan: {
     width: 200,
     height: 200,
     opacity: 1,
   },
   title: {
-    color: '#9966CC',
     fontSize: 28,
     marginTop: 70,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 1.5,
-    textShadowColor: '#9966CC',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
   },
   subtitle: {
-    color: '#C7C3D7',
+    marginTop: 16,
+    maxWidth: 280,
+    textAlign: 'center',
+    lineHeight: 22,
     fontSize: 14,
-    marginTop: 10,
-    letterSpacing: 0.4,
-  },
-  loader: {
-    marginTop: 24,
   },
 });

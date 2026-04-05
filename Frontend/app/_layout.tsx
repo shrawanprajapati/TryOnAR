@@ -5,7 +5,9 @@ import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { AuthProvider } from '../context/auth-context';
+import AnimatedBackground from '../components/AnimatedBackground';
+import { AuthProvider as AppAuthProvider } from '../context/AuthContext';
+import { AuthProvider as FirebaseAuthProvider } from '../context/auth-context';
 import { ThemeProvider as CustomThemeProvider, useTheme } from '../context/ThemeContext';
 
 function WebExtensionNoiseFilter() {
@@ -54,25 +56,37 @@ function WebExtensionNoiseFilter() {
 }
 
 function RootLayoutNav() {
-  const { isDark } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
     <NavThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <WebExtensionNoiseFilter />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding1" />
-        <Stack.Screen name="onboarding2" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="signup" />
-        <Stack.Screen name="home" />
-        <Stack.Screen name="product" />
-        <Stack.Screen name="tryon" />
-        <Stack.Screen name="placement" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="settings" />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
-      </Stack>
+      <AnimatedBackground>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
+            headerStyle: { backgroundColor: theme.glassBg },
+            headerTintColor: theme.text,
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding1" />
+          <Stack.Screen name="onboarding2" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
+          <Stack.Screen name="home" />
+          <Stack.Screen name="explore" />
+          <Stack.Screen name="product" />
+          <Stack.Screen name="tryon" />
+          <Stack.Screen name="placement" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="result" />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal', headerShown: true }} />
+        </Stack>
+      </AnimatedBackground>
       <StatusBar style={isDark ? 'light' : 'dark'} />
     </NavThemeProvider>
   );
@@ -81,9 +95,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <CustomThemeProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
+      <FirebaseAuthProvider>
+        <AppAuthProvider>
+          <RootLayoutNav />
+        </AppAuthProvider>
+      </FirebaseAuthProvider>
     </CustomThemeProvider>
   );
 }

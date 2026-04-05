@@ -1,45 +1,60 @@
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { useAuth } from '@/context/auth-context';
-import { getAuthErrorMessage } from '@/lib/firebase';
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { hexToRgba, useTheme } from '../context/ThemeContext';
+import { getAuthErrorMessage } from '../lib/firebase';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const animationRef = useRef<LottieView>(null);
-  const { user, signIn } = useAuth();
+  const { theme, accent, isDark } = useTheme();
+  const { completeOnboarding, isAuthenticated, isReady, signIn } = useAuth();
 
   useEffect(() => {
     animationRef.current?.play();
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (isReady && isAuthenticated) {
       router.replace('/home');
     }
-  }, [router, user]);
+  }, [isAuthenticated, isReady, router]);
 
-  async function handleLogin() {
-    if (!email.trim() || !password.trim()) {
+  const handleLogin = async () => {
+    if (email.trim() === '' || password.trim() === '') {
       Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
-      setSubmitting(true);
-      await signIn(email, password);
+      await signIn({ email: email.trim(), password });
+      await completeOnboarding();
       router.replace('/home');
     } catch (error) {
       Alert.alert('Login failed', getAuthErrorMessage(error));
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -49,47 +64,98 @@ export default function LoginScreen() {
           source={require('../assets/animations/scan-ring.json')}
           autoPlay
           loop
-          style={styles.backgroundAnimation}
+          style={[styles.backgroundAnimation, { opacity: isDark ? 0.4 : 0.28 }]}
           resizeMode="cover"
         />
-        <View style={styles.overlay} />
+
+        <View
+          style={[
+            styles.overlay,
+            { backgroundColor: hexToRgba(theme.background, isDark ? 0.18 : 0.62) },
+          ]}
+        />
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.contentContainer}>
-        <Text style={styles.title}>Welcome Back</Text>
-        <Text style={styles.subtitle}>Login to continue</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholderTextColor="#9CA3AF"
-          selectionColor="#9966CC"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          placeholderTextColor="#9CA3AF"
-          selectionColor="#9966CC"
-        />
-
-        <TouchableOpacity activeOpacity={0.8} style={[styles.button, submitting && styles.buttonDisabled]} onPress={handleLogin} disabled={submitting}>
-          {submitting ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.buttonText}>Login</Text>}
-        </TouchableOpacity>
-
-        <Text style={styles.footerText}>
-          Don&apos;t have an account?{' '}
-          <Text style={styles.signupText} onPress={() => router.push('/signup')}>
-            Sign Up
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.contentContainer}
+      >
+        <PageTransition style={styles.card}>
+          <Text style={[styles.eyebrow, { color: accent }]}>Backend Connected</Text>
+          <Text style={[styles.title, { color: theme.text, textShadowColor: accent }]}>
+            Welcome Back
           </Text>
-        </Text>
+          <Text style={[styles.subtitle, { color: theme.subText }]}>
+            Sign in to sync your profile, products, and live AR sessions.
+          </Text>
+
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                borderColor: theme.glassBorder,
+                color: theme.text,
+              },
+            ]}
+            placeholder="Enter email"
+            value={email}
+            onChangeText={setEmail}
+            placeholderTextColor={theme.subText}
+            selectionColor={accent}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                borderColor: theme.glassBorder,
+                color: theme.text,
+              },
+            ]}
+            placeholder="Enter password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor={theme.subText}
+            selectionColor={accent}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.82}
+            style={[styles.button, { backgroundColor: accent, shadowColor: accent }]}
+            onPress={() => void handleLogin()}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.82}
+            style={[
+              styles.secondaryButton,
+              { borderColor: theme.glassBorder, backgroundColor: theme.glassBg },
+            ]}
+            onPress={() => router.push('/onboarding1')}
+          >
+            <Text style={[styles.secondaryButtonText, { color: theme.text }]}>View Onboarding</Text>
+          </TouchableOpacity>
+
+          <Text style={[styles.footerText, { color: theme.text }]}>
+            Don&apos;t have an account?{' '}
+            <Text style={[styles.signupText, { color: accent }]} onPress={() => router.push('/signup')}>
+              Sign Up
+            </Text>
+          </Text>
+        </PageTransition>
       </KeyboardAvoidingView>
     </View>
   );
@@ -98,65 +164,72 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: 'transparent',
   },
   backgroundAnimation: {
     width: '100%',
     height: '100%',
-    opacity: 0.4,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 10, 10, 0.05)',
   },
   contentContainer: {
     flex: 1,
     justifyContent: 'center',
     padding: 25,
   },
+  card: {
+    borderRadius: 28,
+    padding: 24,
+    backgroundColor: 'rgba(4, 6, 10, 0.14)',
+  },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#FFFFFF',
     textAlign: 'center',
-    fontFamily: 'Poppins-bold',
-    textShadowColor: '#9966CC',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 15,
   },
   subtitle: {
     fontSize: 16,
-    color: '#9CA3AF',
     textAlign: 'center',
-    fontFamily: 'Poppins-bold',
     marginBottom: 30,
-    textShadowColor: '#9966CC',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
+    lineHeight: 24,
   },
   input: {
-    backgroundColor: 'rgba(20, 20, 20, 0.7)',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#9966CC',
-    color: '#FFFFFF',
   },
   button: {
-    backgroundColor: '#9966CC',
     padding: 15,
     borderRadius: 12,
     alignItems: 'center',
     marginTop: 10,
     elevation: 5,
-    shadowColor: '#9966CC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-  buttonDisabled: {
-    opacity: 0.7,
+  secondaryButton: {
+    marginTop: 12,
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  secondaryButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -166,11 +239,9 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     marginTop: 25,
-    color: '#FFFFFF',
     fontSize: 14,
   },
   signupText: {
-    color: '#9966CC',
     fontWeight: 'bold',
   },
 });

@@ -1,41 +1,61 @@
+import { useRouter } from 'expo-router';
+import LottieView from 'lottie-react-native';
+import React from 'react';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-import { useNavigation } from "@react-navigation/native";
-import LottieView from "lottie-react-native";
-import React from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
-const { height } = Dimensions.get("window");
+const { height } = Dimensions.get('window');
 
 export default function Onboarding1() {
-  const navigation = useNavigation();
+  const router = useRouter();
+  const { theme, accent } = useTheme();
+  const { completeOnboarding } = useAuth();
 
   return (
-    <View style={styles.container}>
-      
-    
-      <View style={styles.animationContainer}>
-        <LottieView
-          source={require("../assets/animations/sparkles.json")} // ✅ fixed path
-          autoPlay
-          loop
-          style={styles.animation}
-        />
-      </View>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+      <PageTransition style={styles.page}>
+        <View style={[styles.badge, { backgroundColor: theme.glassBg, borderColor: theme.glassBorder }]}>
+          <Text style={[styles.badgeText, { color: accent }]}>1 / 2</Text>
+        </View>
 
-      
-      <View style={styles.textContainer}>
-        <Text style={styles.text}>
-          Detect objects using AI. 🤖
-        </Text>
-      </View>
+        <View style={styles.animationContainer}>
+          <LottieView
+            source={require('../assets/animations/sparkles.json')}
+            autoPlay
+            loop
+            style={styles.animation}
+          />
+        </View>
 
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={() => navigation.navigate('onboarding2' as never)}
-      >
-        <Text style={styles.nextText}> Next</Text>
-      </TouchableOpacity>
+        <View style={styles.textContainer}>
+          <Text style={[styles.title, { color: theme.text }]}>Place Objects Live</Text>
+          <Text style={[styles.text, { color: theme.subText }]}>
+            Scan your room, detect anchor surfaces, and launch a live placement viewer for decor and objects.
+          </Text>
+        </View>
 
+        <View style={styles.footerRow}>
+          <TouchableOpacity
+            style={[styles.secondaryButton, { borderColor: theme.glassBorder, backgroundColor: theme.glassBg }]}
+            onPress={async () => {
+              await completeOnboarding();
+              router.replace('/login');
+            }}
+          >
+            <Text style={[styles.secondaryText, { color: theme.text }]}>Skip</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.nextButton, { backgroundColor: accent }]}
+            onPress={() => router.push('/onboarding2')}
+          >
+            <Text style={styles.nextText}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </PageTransition>
     </View>
   );
 }
@@ -43,52 +63,77 @@ export default function Onboarding1() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0A0A",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
   },
-
+  page: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingTop: 72,
+    paddingBottom: 42,
+    paddingHorizontal: 24,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
   animationContainer: {
-    position: "absolute",
-    top: height * 0.18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: height * 0.04,
   },
-
   animation: {
-    width: 450,
-    height: 450,
-    opacity: 0.7,
+    width: 320,
+    height: 320,
+    opacity: 0.85,
   },
-
   textContainer: {
-    position: "absolute",
-    bottom: 150,
-    paddingHorizontal: 30,
+    marginTop: 12,
   },
-
+  title: {
+    fontSize: 34,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
   text: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    textAlign: "center",
-    fontFamily: "Poppins-bold",
-    fontWeight: "500",
-    textShadowColor: '#9966CC', // purple glow
-  textShadowOffset: { width: 0, height: 0 },
-  textShadowRadius: 10,
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 26,
+    paddingHorizontal: 10,
   },
-
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  secondaryText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   nextButton: {
-    position: "absolute",
-    bottom: 40,
-    right: 25,
-    backgroundColor: "#0A0A0A",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 30,
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
-
   nextText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

@@ -1,94 +1,186 @@
 import { useRouter } from 'expo-router';
 import LottieView from 'lottie-react-native';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import { useAuth } from '@/context/auth-context';
-import { getAuthErrorMessage } from '@/lib/firebase';
+import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/AuthContext';
+import { hexToRgba, useTheme } from '../context/ThemeContext';
+import { getAuthErrorMessage } from '../lib/firebase';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { theme, accent, isDark } = useTheme();
+  const { completeOnboarding, isAuthenticated, isReady, signUp } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('AR Creator');
   const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const { user, signUp } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (isReady && isAuthenticated) {
       router.replace('/home');
     }
-  }, [router, user]);
+  }, [isAuthenticated, isReady, router]);
 
-  async function handleSignUp() {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter email and password');
+  const handleSignUp = async () => {
+    if (name.trim() === '' || email.trim() === '' || password.trim() === '') {
+      Alert.alert('Missing details', 'Please enter your name, email, and password.');
       return;
     }
 
-    if (password.trim().length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters long.');
-      return;
-    }
+    setIsSubmitting(true);
 
     try {
-      setSubmitting(true);
-      await signUp(email, password);
+      await signUp({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role: role.trim() || 'AR Creator',
+      });
+      await completeOnboarding();
       router.replace('/home');
     } catch (error) {
-      Alert.alert('Sign up failed', getAuthErrorMessage(error));
+      Alert.alert('Sign-up failed', getAuthErrorMessage(error));
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0a0a0a' }}>
+    <View style={styles.screen}>
       <View style={StyleSheet.absoluteFillObject}>
         <LottieView
           source={require('../assets/animations/scan-ring.json')}
           autoPlay
           loop
-          style={styles.backgroundAnimation}
+          style={[styles.backgroundAnimation, { opacity: isDark ? 0.38 : 0.26 }]}
           resizeMode="cover"
         />
-        <View style={styles.overlay} />
+        <View
+          style={[
+            styles.overlay,
+            { backgroundColor: hexToRgba(theme.background, isDark ? 0.16 : 0.56) },
+          ]}
+        />
       </View>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.title}>Sign Up</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Email"
-            value={email}
-            onChangeText={setEmail}
-            placeholderTextColor="#9CA3AF"
-            selectionColor="#9966CC"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor="#9CA3AF"
-            selectionColor="#9966CC"
-          />
-
-          <TouchableOpacity style={[styles.button, submitting && styles.buttonDisabled]} onPress={handleSignUp} disabled={submitting}>
-            {submitting ? <ActivityIndicator color="#F5F7FB" /> : <Text style={styles.buttonText}>Sign Up</Text>}
-          </TouchableOpacity>
-
-          <Text style={styles.footerText}>
-            Already have an account?{' '}
-            <Text style={styles.loginText} onPress={() => router.push('/login')}>
-              Login
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboard}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <PageTransition style={styles.card}>
+            <Text style={[styles.eyebrow, { color: accent }]}>Create Workspace</Text>
+            <Text style={[styles.title, { color: theme.text, textShadowColor: accent }]}>Sign Up</Text>
+            <Text style={[styles.subtitle, { color: theme.subText }]}>
+              Start with a synced account so profile data and AR workspace tools come from the backend.
             </Text>
-          </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                  borderColor: theme.glassBorder,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Your name"
+              value={name}
+              onChangeText={setName}
+              placeholderTextColor={theme.subText}
+              selectionColor={accent}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                  borderColor: theme.glassBorder,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Email address"
+              value={email}
+              onChangeText={setEmail}
+              placeholderTextColor={theme.subText}
+              selectionColor={accent}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                  borderColor: theme.glassBorder,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Role"
+              value={role}
+              onChangeText={setRole}
+              placeholderTextColor={theme.subText}
+              selectionColor={accent}
+            />
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: hexToRgba(theme.card, isDark ? 0.78 : 0.92),
+                  borderColor: theme.glassBorder,
+                  color: theme.text,
+                },
+              ]}
+              placeholder="Password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholderTextColor={theme.subText}
+              selectionColor={accent}
+            />
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: accent, shadowColor: accent }]}
+              onPress={() => void handleSignUp()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={[styles.footerText, { color: theme.text }]}>
+              Already have an account?{' '}
+              <Text style={[styles.loginText, { color: accent }]} onPress={() => router.push('/login')}>
+                Login
+              </Text>
+            </Text>
+          </PageTransition>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -96,67 +188,51 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 30,
+  screen: { flex: 1 },
+  keyboard: { flex: 1 },
+  scrollView: { flex: 1, backgroundColor: 'transparent' },
+  container: { flexGrow: 1, justifyContent: 'center', padding: 30 },
+  card: {
+    borderRadius: 30,
+    padding: 24,
+    backgroundColor: 'rgba(4, 6, 10, 0.14)',
   },
-  backgroundAnimation: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.4,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10, 10, 10, 0.2)',
+  backgroundAnimation: { width: '100%', height: '100%' },
+  overlay: { ...StyleSheet.absoluteFillObject },
+  eyebrow: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   title: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#F5F7FB',
     textAlign: 'center',
-    marginBottom: 30,
-    textShadowColor: '#9966CC',
+    marginBottom: 12,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 15,
   },
-  input: {
-    backgroundColor: 'rgba(20, 20, 20, 0.7)',
-    padding: 18,
-    borderRadius: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#9966CC',
-    color: '#FFFFFF',
+  subtitle: {
+    textAlign: 'center',
+    lineHeight: 24,
+    fontSize: 15,
+    marginBottom: 28,
   },
+  input: { padding: 18, borderRadius: 15, marginBottom: 16, borderWidth: 1 },
   button: {
-    backgroundColor: '#9966CC',
     paddingVertical: 18,
     borderRadius: 15,
     alignItems: 'center',
     marginTop: 10,
     elevation: 5,
-    shadowColor: '#9966CC',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#F5F7FB',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  footerText: {
-    textAlign: 'center',
-    marginTop: 25,
-    color: '#F5F7FB',
-    fontSize: 14,
-  },
-  loginText: {
-    color: '#9966CC',
-    fontWeight: 'bold',
-  },
+  buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  footerText: { textAlign: 'center', marginTop: 25, fontSize: 14 },
+  loginText: { fontWeight: 'bold' },
 });
