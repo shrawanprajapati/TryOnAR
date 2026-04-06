@@ -5,9 +5,11 @@ const express = require('express');
 const path = require('path');
 
 const { getDbPool } = require('./config/db');
+const aiRoutes = require('./routes/ai');
 const productRoutes = require('./routes/products');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/uploads');
+const workspaceRoutes = require('./routes/workspace');
 
 const app = express();
 const port = Number(process.env.PORT || 4000);
@@ -15,6 +17,7 @@ const host = process.env.HOST || '0.0.0.0';
 const frontendUrl = process.env.FRONTEND_URL || '*';
 const uploadsDir = path.resolve(__dirname, '..', 'uploads');
 const aiViewerDir = path.resolve(__dirname, '..', '..', 'AI', 'TryOnAR');
+const hostedAiViewerUrl = process.env.AI_VIEWER_URL || 'https://virtual-hat-glasses-try-on-booth.vercel.app';
 const allowedOrigins =
   frontendUrl === '*'
     ? null
@@ -58,7 +61,7 @@ app.get('/', (_req, res) => {
     health: '/health',
     products: '/api/products',
     profile: '/api/users/me',
-    aiViewer: '/ai-viewer/',
+    aiViewer: hostedAiViewerUrl,
   });
 });
 
@@ -72,12 +75,14 @@ app.get('/health', async (_req, res) => {
 });
 
 app.get('/api/ai/viewer-url', (_req, res) => {
-  res.json({ path: '/ai-viewer/' });
+  res.json({ viewerUrl: hostedAiViewerUrl });
 });
 
+app.use('/api/ai', aiRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/workspace', workspaceRoutes);
 
 app.listen(port, host, () => {
   console.log(`TryOnAR backend listening on http://${host}:${port}`);
